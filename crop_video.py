@@ -44,6 +44,9 @@ def main():
     rect_y = int(center[1] - rect_size // 2)
 
     video = cv2.VideoCapture(args.video_fn)
+    video_out = cv2.VideoWriter(
+        os.path.join(args.output, video_key + ".mp4"), cv2.VideoWriter_fourcc(*'mp4v'), 24,
+        (args.resolution, args.resolution))
 
     while True:
         ret, im = video.read()
@@ -52,21 +55,14 @@ def main():
             break
 
         source_points = np.float32([[rect_x, rect_y], [rect_x + rect_size, rect_y], [rect_x, rect_y + rect_size]])
-        target_points = np.float32([[0, 0], [rect_size, 0], [0, rect_size]])
+        target_points = np.float32([[0, 0], [args.resolution, 0], [0, args.resolution]])
         M = cv2.getAffineTransform(source_points, target_points)
-        canvas = cv2.warpAffine(im, M, (rect_size, rect_size))
+        canvas = cv2.warpAffine(im, M, (args.resolution, args.resolution))
 
-        canvas = cv2.resize(canvas, (args.resolution, args.resolution))
+        video_out.write(canvas)
 
-        cv2.rectangle(im, (rect_x, rect_y), (rect_x + rect_size, rect_y + rect_size), (0, 255, 0), 3)
-
-        for p in pose:
-            cv2.circle(im, (int(p[0]), int(p[1])), 3, (255, 0, 0), -1)
-
-        cv2.circle(im, (int(center[0]), int(center[1])), 10, (0, 0, 255), -1)
-
-        cv2.imshow("image", canvas)
-        cv2.waitKey(20)
+    video.release()
+    video_out.release()
 
 
 if __name__ == "__main__":
